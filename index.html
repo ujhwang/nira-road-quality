@@ -331,16 +331,16 @@
                         source: "anomaly",
                         filter: ["!", ["has", "point_count"]],
                         paint: {
-                            "circle-radius": 3.5,
+                            "circle-radius": 4,
                             "circle-color": [
                                 "match",
                                 ["get", "type"],
-                                "POTHOLE", "#de60f7",
-                                "BUMP", "#46fa7f",
+                                "POTHOLE", "#347bed",
+                                "BUMP", "#43c4fa",
                                 "OTHER", "#b8b8b8",
                                 "#999999"
                             ],
-                            "circle-stroke-width": 0.2,
+                            "circle-stroke-width": 0.4,
                             "circle-stroke-color": "#fff"
                         }
                     });
@@ -352,17 +352,17 @@
                         source: "anomaly",
                         filter: ["==", ["get", "id"], ""], // initially no highlight
                         paint: {
-                            "circle-radius": 7,        // bigger than normal points
+                            "circle-radius": 7,
                             "circle-color": [
                                 "match",
                                 ["get", "type"],
-                                "POTHOLE", "#de60f7",
-                                "BUMP", "#46fa7f",
+                                "POTHOLE", "#347bed",
+                                "BUMP", "#43c4fa",
                                 "OTHER", "#b8b8b8",
                                 "#999999"
                             ],
-                            "circle-stroke-color": "#ffffff",      // white border
-                            "circle-stroke-width": 2
+                            "circle-stroke-width": 2,
+                            "circle-stroke-color": "#fff"
                         }
                     });
 
