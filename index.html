@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NIRA road data</title>
+    <title>Metro Atlanta Road Roughness & Anomalies (NIRA)</title>
     <link href='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -36,11 +36,11 @@
         }
 
         .legend {
-            background: rgba(0,0,0,0.6);
+            background: rgba(0,0,0,0.7);
             padding: 10px 12px;
             border-radius: 8px;
-            font-size: 14px;
-            line-height: 1.2;
+            font-size: 15px;
+            line-height: 1.6;
         }
 
         .legend-color {
@@ -58,7 +58,7 @@
     <div id="map"></div>
     <div id="legend-container">
         <div class="legend" id="roughness-legend">
-            <strong>Roughness (inch/mile)</strong><br>
+            <strong>Roughness (IRI in inch/mile)</strong><br>
             <span class="legend-color" style="background:#2DC937;"></span> 0–95<br>
             <span class="legend-color" style="background:#99C140;"></span> 95–130<br>
             <span class="legend-color" style="background:#E7B416;"></span> 130–170<br>
@@ -67,17 +67,17 @@
         </div>
 
         <div class="legend" id="anomaly-legend">
-            <strong>Anomaly Type</strong><br>
+            <strong>Road Anomaly Types</strong><br>
             <label><input type="checkbox" value="POTHOLE" checked> 
-                <span class="legend-color" style="background:#9442db;"></span> POTHOLE</label><br>
+                <span class="legend-color" style="background:#9442db;"></span> Pothole</label><br>
             <label><input type="checkbox" value="BUMP" checked> 
-                <span class="legend-color" style="background:#17aceb;"></span> BUMP</label><br>
+                <span class="legend-color" style="background:#17aceb;"></span> Bump</label><br>
             <label><input type="checkbox" value="OTHER" checked> 
-                <span class="legend-color" style="background:#686869;"></span> OTHER</label>
+                <span class="legend-color" style="background:#686869;"></span> Other</label>
         </div>
 
         <div class="legend" id="road-type-controls">
-            <strong>Road Types</strong><br>
+            <strong>Road Types (OSM)</strong><br>
             <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
             <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
             <label><input type="checkbox" value="primary" checked> Primary</label><br>
@@ -253,7 +253,7 @@
                             if (err) return;
                             map.easeTo({
                                 center: features[0].geometry.coordinates,
-                                zoom: zoom+1
+                                zoom: zoom+0.8
                             });
                         });
                     });
@@ -298,7 +298,15 @@
                         source: "anomaly",
                         filter: ["!", ["has", "point_count"]],
                         paint: {
-                            "circle-radius": 4,
+                            "circle-radius": [
+                                "step",
+                                ["get", "severity"],
+                                4,
+                                2, 6, 
+                                3, 8,  
+                                4, 10, 
+                                5, 12 
+                            ],
                             "circle-color": [
                                 "match",
                                 ["get", "type"],
@@ -319,7 +327,15 @@
                         source: "anomaly",
                         filter: ["==", ["get", "id"], ""], // initially no highlight
                         paint: {
-                            "circle-radius": 7,
+                            "circle-radius": [
+                                "step",
+                                ["get", "severity"],
+                                4+4,
+                                2, 6+4, 
+                                3, 8+4,  
+                                4, 10+4, 
+                                5, 12+4 
+                            ],
                             "circle-color": [
                                 "match",
                                 ["get", "type"],
@@ -439,6 +455,27 @@
                             'line-width': 1,
                             'line-dasharray': [2, 2]
                         }
+                    });
+
+                    map.addLayer({
+                        'id': 'counties-label',
+                        'type': 'symbol',
+                        'source': 'counties',
+                        'layout': {
+                            'text-field': ['get', 'NAME'],
+                            'text-font': ['Roboto Bold', 'Arial Unicode MS Bold'],
+                            'text-size': 18,
+                            'text-anchor': 'center',
+                            'symbol-placement': 'point', 
+                            'text-allow-overlap': false 
+                        },
+                        'paint': {
+                            'text-color': '#ffffff',
+                            'text-halo-color': '#000000',
+                            'text-halo-width': 1
+                        },
+                        'minzoom': 3,
+                        'maxzoom': 11
                     });
                 });
 
