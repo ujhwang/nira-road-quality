@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NIRA road data</title>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 100%;
+        }
+        .mapboxgl-popup {
+            max-width: 400px !important;
+            min-width: 250px;
+            font-family: 'Roboto', sans-serif;
+            font-size: 13px;
+        }
+
+        #legend-container {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;  /* stack legends vertically */
+            gap: 10px;               /* space between legends */
+            font-family: 'Roboto', sans-serif;
+            color: white;
+        }
+
+        .legend {
+            background: rgba(0,0,0,0.6);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 5px;
+            vertical-align: middle;
+        }
+
+        #road-type-controls {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px;
+            border-radius: 8px;
+            color: white;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        #road-type-controls label {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="legend-container">
+        <div class="legend" id="roughness-legend">
+            <strong>Roughness (inch/mile)</strong><br>
+            <span class="legend-color" style="background:#2DC937;"></span> 0–95<br>
+            <span class="legend-color" style="background:#99C140;"></span> 95–130<br>
+            <span class="legend-color" style="background:#E7B416;"></span> 130–170<br>
+            <span class="legend-color" style="background:#DB7B2B;"></span> 170–220<br>
+            <span class="legend-color" style="background:#CC3232;"></span> 220+
+        </div>
+
+        <div class="legend" id="anomaly-legend">
+            <strong>Anomaly Type</strong><br>
+            <span class="legend-color" style="background:#de60f7;"></span> POTHOLE<br>
+            <span class="legend-color" style="background:#46fa7f;"></span> BUMP<br>
+            <span class="legend-color" style="background:#b8b8b8;"></span> OTHER
+        </div>
+    </div>
+
+    <div id="road-type-controls">
+        <strong>Road Types</strong><br>
+        <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
+        <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
+        <label><input type="checkbox" value="primary" checked> Primary</label><br>
+        <label><input type="checkbox" value="secondary" checked> Secondary</label><br>
+        <label><input type="checkbox" value="tertiary" checked> Tertiary</label><br>
+        <label><input type="checkbox" value="residential" checked> Residential</label>
+    </div>
+
+    <script src='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js'></script>
+    <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script>
+        mapboxgl.accessToken = 'pk.eyJ1IjoidWpod2FuZyIsImEiOiJjbHl4N2h5cTQxeXU1MmpvaWZ5bXNjdHpjIn0.gcfpTq4jsVV2E9yULpcJWQ';
+
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/dark-v10',
+            center: [-84.4280, 33.8390],
+            zoom: 9
+        });
+
+        function initializeMap() {
+            map.on('load', function () {
+
+                ///////// Road roughness
+                // Vector tile source
+                map.addSource('my-vector-tiles', {
+                    type: 'vector',
+                    url: 'mapbox://ujhwang.0oz70ei1'
+                });
+
+                // Main roughness layer
+                map.addLayer({
+                    'id': 'nira-roughness-layer',
+                    'type': 'line',
+                    'source': 'my-vector-tiles',
+                    'source-layer': 'osmnx_edges_nira_joined-5czlx2',
+                    'minzoom': 0,
+                    'maxzoom': 24,
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': [
+                            'step',
+                            ['get', 'roughness_60_days'],
+                            '#2DC937', // default for < 95
+                            95, '#99C140',
+                            130, '#E7B416',
+                            170, '#DB7B2B',
+                            220, '#CC3232'
+                        ],
+                        'line-width': 2
+                    }
+                });
+
+                // Highlight layer (appears above main layer)
+                map.addLayer({
+                    'id': 'nira-roughness-highlight',
+                    'type': 'line',
+                    'source': 'my-vector-tiles',
+                    'source-layer': 'osmnx_edges_nira_joined-5czlx2',
+                    'layout': {
+                        'line-join': 'round',
+                        'line-cap': 'round'
+                    },
+                    'paint': {
+                        'line-color': [
+                            'step',
+                            ['get', 'roughness_60_days'],
+                            '#2DC937', // default for < 95
+                            95, '#99C140',
+                            130, '#E7B416',
+                            170, '#DB7B2B',
+                            220, '#CC3232'
+                        ],
+                        'line-width': 10
+                    },
+                    'filter': ['==', ['get', 'id'], -1] // initially no highlight
+                });
+
+                // Tooltip setup
+                const popup = new mapboxgl.Popup({
+                    closeButton: false,
+                    closeOnClick: false,
+                    offset: [0, -15]
+                });
+
+                map.on('mousemove', 'nira-roughness-layer', (e) => {
+                    map.getCanvas().style.cursor = 'pointer';
+                    const f = e.features[0];
+                    const { name, highway, roughness_60_days, id } = f.properties;
+
+                    // Set highlight filter
+                    map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], id]);
+
+                    const desc = `
+                        ${name || 'Unnamed road'}<br>
+                        <em>${highway || 'Unknown type'}</em><br>
+                        <strong>Roughness (past 60 days): ${roughness_60_days ? roughness_60_days.toFixed(0) : 'N/A'} in/mi</strong>
+                    `;
+
+                    popup.setLngLat(e.lngLat).setHTML(desc).addTo(map);
+                });
+
+                map.on('mouseleave', 'nira-roughness-layer', () => {
+                    map.getCanvas().style.cursor = '';
+                    popup.remove();
+                    map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
+                });
+
+                // Function to update road type filter
+                function updateRoadTypeFilter() {
+                    const checkboxes = document.querySelectorAll('#road-type-controls input[type="checkbox"]');
+                    const selected = Array.from(checkboxes)
+                                        .filter(cb => cb.checked)
+                                        .map(cb => cb.value);
+
+                    // If none selected, show nothing
+                    if (selected.length === 0) {
+                        map.setFilter('nira-roughness-layer', ['in', 'highway', '']); 
+                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
+                    } else {
+                        map.setFilter('nira-roughness-layer', ['in', ['get', 'highway'], ['literal', selected]]);
+                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
+                    }
+                }
+
+                // Attach change events to checkboxes
+                document.querySelectorAll('#road-type-controls input[type="checkbox"]').forEach(cb => {
+                    cb.addEventListener('change', updateRoadTypeFilter);
+                });
+
+
+                /////// Anomaly
+                d3.json('data/geojson/anomaly_filtered.geojson').then(function(geojson) {
+
+                    map.addSource('anomaly', {
+                        type: 'geojson',
+                        data: geojson,
+                        type: "geojson",
+                        cluster: true,      // enable clustering
+                        clusterMaxZoom: 12, // max zoom to cluster points
+                        clusterRadius: 50   // radius in pixels to group point
+                    });
+
+                    // Layer for clustered circles
+                    map.addLayer({
+                        id: "clusters",
+                        type: "circle",
+                        source: "anomaly",
+                        filter: ["has", "point_count"], // only clusters
+                        paint: {
+                            "circle-color": [
+                                "step",
+                                ["get", "point_count"],
+                                "#51bbd6",  // small clusters
+                                50, "#f1f075", 
+                                100, "#f28cb1",
+                                1000, "#ff0000"
+                            ],
+                            "circle-radius": [
+                                "step",
+                                ["get", "point_count"],
+                                13, 
+                                50, 16,
+                                100, 23,
+                                1000, 30
+                            ]
+                        }
+                    });
+
+                    // Cluster count labels
+                    map.addLayer({
+                        id: "cluster-count",
+                        type: "symbol",
+                        source: "anomaly",
+                        filter: ["has", "point_count"],
+                        layout: {
+                            "text-field": "{point_count_abbreviated}",
+                            "text-font": ["Roboto Bold"],
+                            "text-size": 12
+                        }
+                    });
+
+                    map.on('click', 'clusters', function (e) {
+                        const features = map.queryRenderedFeatures(e.point, {
+                            layers: ['clusters']
+                        });
+                        const clusterId = features[0].properties.cluster_id;
+                        map.getSource('anomaly').getClusterExpansionZoom(clusterId, function (err, zoom) {
+                            if (err) return;
+                            map.easeTo({
+                                center: features[0].geometry.coordinates,
+                                zoom: zoom+1
+                            });
+                        });
+                    });
+
+                    // Add a layer for highlighting clusters on hover
+                    map.addLayer({
+                        id: "clusters-highlight",
+                        type: "circle",
+                        source: "anomaly",
+                        filter: ["==", "cluster_id", -1], // initially no highlight
+                        paint: {
+                            "circle-radius": [
+                                "step",
+                                ["get", "point_count"],
+                                13, 
+                                50, 16,
+                                100, 23,
+                                1000, 30
+                            ],
+                            "circle-color": "rgba(255,255,255,0)", // transparent fill
+                            "circle-stroke-color": "#ffffff",     // white border
+                            "circle-stroke-width": 3
+                        }
+                    });
+
+                    // Mouse events for cluster hover
+                    map.on("mouseenter", "clusters", (e) => {
+                        map.getCanvas().style.cursor = "pointer";
+                        const clusterId = e.features[0].properties.cluster_id;
+                        map.setFilter("clusters-highlight", ["==", "cluster_id", clusterId]);
+                    });
+
+                    map.on("mouseleave", "clusters", () => {
+                        map.getCanvas().style.cursor = "";
+                        map.setFilter("clusters-highlight", ["==", "cluster_id", -1]);
+                    });
+
+                    // Unclustered anomaly point
+                    map.addLayer({
+                        id: "anomaly-layer",
+                        type: "circle",
+                        source: "anomaly",
+                        filter: ["!", ["has", "point_count"]],
+                        paint: {
+                            "circle-radius": 3.5,
+                            "circle-color": [
+                                "match",
+                                ["get", "type"],
+                                "POTHOLE", "#de60f7",
+                                "BUMP", "#46fa7f",
+                                "OTHER", "#b8b8b8",
+                                "#999999"
+                            ],
+                            "circle-stroke-width": 0.2,
+                            "circle-stroke-color": "#fff"
+                        }
+                    });
+
+                    // Add highlight layer for unclustered anomaly points
+                    map.addLayer({
+                        id: "anomaly-highlight",
+                        type: "circle",
+                        source: "anomaly",
+                        filter: ["==", ["get", "id"], ""], // initially no highlight
+                        paint: {
+                            "circle-radius": 7,        // bigger than normal points
+                            "circle-color": [
+                                "match",
+                                ["get", "type"],
+                                "POTHOLE", "#de60f7",
+                                "BUMP", "#46fa7f",
+                                "OTHER", "#b8b8b8",
+                                "#999999"
+                            ],
+                            "circle-stroke-color": "#ffffff",      // white border
+                            "circle-stroke-width": 2
+                        }
+                    });
+
+                    // Popup for anomaly
+                    const popup = new mapboxgl.Popup({
+                        closeButton: false,
+                        closeOnClick: false,
+                        offset: [0, -15]
+                    });
+
+                    let hoveredIncidentId = null;
+
+                    map.on("mousemove", "anomaly-layer", (e) => {
+                        map.getCanvas().style.cursor = "pointer";
+                        const f = e.features[0];
+
+                        hoveredIncidentId = f.id;
+
+                        const props = f.properties;
+                        const html = `
+                            <strong>Type:</strong> ${props.type}<br>
+                            <strong>Severity:</strong> ${props.severity}<br>
+                            <strong>Hit ratio:</strong> ${(+props.hit_ratio).toFixed(2)}<br>
+                            <strong>Direction:</strong> ${props.direction}<br>
+                            <strong>First detection:</strong> ${props.first_detection}
+                        `;
+                        popup.setLngLat(e.lngLat).setHTML(html).addTo(map);
+                    });
+
+                    // Mouse events for anomaly points
+                    map.on("mouseenter", "anomaly-layer", (e) => {
+                        map.getCanvas().style.cursor = "pointer";
+
+                        // Use the property 'id' inside properties
+                        const featureId = e.features[0].properties.id;
+
+                        // Set filter using the property
+                        map.setFilter("anomaly-highlight", ["==", ["get", "id"], featureId]);
+                    });
+
+                    map.on("mouseleave", "anomaly-layer", () => {
+                        map.getCanvas().style.cursor = "";
+                        map.setFilter("anomaly-highlight", ["==", ["get", "id"], -1]); 
+                        popup.remove();
+                    });
+                });
+
+                //////// County boundaries
+                d3.json('data/geojson/21_counties.geojson').then(function(geojsonData) {
+                    map.addSource('counties', {
+                        type: 'geojson',
+                        data: geojsonData
+                    });
+
+                    map.addLayer({
+                        'id': 'counties-layer',
+                        'type': 'line',
+                        'source': 'counties',
+                        'paint': {
+                            'line-color': '#a3a2a2',
+                            'line-width': 1,
+                            'line-dasharray': [2, 2]
+                        }
+                    });
+                });
+            });
+        }
+
+        initializeMap();
+    </script>
+</body>
+</html>
