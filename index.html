@@ -56,17 +56,15 @@
             top: 20px;
             right: 20px;
             background: rgba(0, 0, 0, 0.6);
-            padding: 10px;
+            padding: 10px 14px;
             border-radius: 8px;
             color: white;
             font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            line-height: 1.2;
         }
 
-        #road-type-controls label {
-            display: block;
-            margin-bottom: 4px;
-            font-size: 14px;
-        }
+
     </style>
 </head>
 <body>
@@ -101,6 +99,9 @@
 
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js'></script>
     <script src="https://d3js.org/d3.v6.min.js"></script>
+    <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.min.js"></script>
+    <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css" type="text/css">
+
     <script>
         mapboxgl.accessToken = 'pk.eyJ1IjoidWpod2FuZyIsImEiOiJjbHl4N2h5cTQxeXU1MmpvaWZ5bXNjdHpjIn0.gcfpTq4jsVV2E9yULpcJWQ';
 
@@ -431,6 +432,19 @@
         }
 
         initializeMap();
+
+        // Add the search box (geocoder)
+        const geocoder = new MapboxGeocoder({
+            accessToken: mapboxgl.accessToken,  // same token used for map
+            mapboxgl: mapboxgl,
+            marker: false, // don't drop a marker automatically
+            placeholder: "Search for a location", // placeholder text
+            collapsed: false // keep open by default
+        });
+
+        // Add geocoder control to top-left corner
+        map.addControl(geocoder, "top-left");
+
     </script>
 </body>
 </html>
