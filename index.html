@@ -29,17 +29,18 @@
             bottom: 20px;
             left: 20px;
             display: flex;
-            flex-direction: column;  /* stack legends vertically */
-            gap: 10px;               /* space between legends */
+            flex-direction: column;
+            gap: 10px;
             font-family: 'Roboto', sans-serif;
             color: white;
         }
 
         .legend {
             background: rgba(0,0,0,0.6);
-            padding: 10px;
+            padding: 10px 12px;
             border-radius: 8px;
             font-size: 14px;
+            line-height: 1.2;
         }
 
         .legend-color {
@@ -47,21 +48,7 @@
             width: 12px;
             height: 12px;
             border-radius: 50%;
-            margin-right: 5px;
-            vertical-align: middle;
-        }
-
-        #road-type-controls {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 10px 14px;
-            border-radius: 8px;
-            color: white;
-            font-family: 'Roboto', sans-serif;
-            font-size: 14px;
-            line-height: 1.2;
+            margin-right: 4px;
         }
 
 
@@ -81,20 +68,23 @@
 
         <div class="legend" id="anomaly-legend">
             <strong>Anomaly Type</strong><br>
-            <span class="legend-color" style="background:#9442db;"></span> POTHOLE<br>
-            <span class="legend-color" style="background:#17aceb;"></span> BUMP<br>
-            <span class="legend-color" style="background:#686869;"></span> OTHER
+            <label><input type="checkbox" value="POTHOLE" checked> 
+                <span class="legend-color" style="background:#9442db;"></span> POTHOLE</label><br>
+            <label><input type="checkbox" value="BUMP" checked> 
+                <span class="legend-color" style="background:#17aceb;"></span> BUMP</label><br>
+            <label><input type="checkbox" value="OTHER" checked> 
+                <span class="legend-color" style="background:#686869;"></span> OTHER</label>
         </div>
-    </div>
 
-    <div id="road-type-controls">
-        <strong>Road Types</strong><br>
-        <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
-        <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
-        <label><input type="checkbox" value="primary" checked> Primary</label><br>
-        <label><input type="checkbox" value="secondary" checked> Secondary</label><br>
-        <label><input type="checkbox" value="tertiary" checked> Tertiary</label><br>
-        <label><input type="checkbox" value="residential" checked> Residential</label>
+        <div class="legend" id="road-type-controls">
+            <strong>Road Types</strong><br>
+            <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
+            <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
+            <label><input type="checkbox" value="primary" checked> Primary</label><br>
+            <label><input type="checkbox" value="secondary" checked> Secondary</label><br>
+            <label><input type="checkbox" value="tertiary" checked> Tertiary</label><br>
+            <label><input type="checkbox" value="residential"> Residential</label>
+        </div>
     </div>
 
     <script src='https://api.mapbox.com/mapbox-gl-js/v2.5.0/mapbox-gl.js'></script>
@@ -203,28 +193,6 @@
                     map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
                 });
 
-                // Function to update road type filter
-                function updateRoadTypeFilter() {
-                    const checkboxes = document.querySelectorAll('#road-type-controls input[type="checkbox"]');
-                    const selected = Array.from(checkboxes)
-                                        .filter(cb => cb.checked)
-                                        .map(cb => cb.value);
-
-                    // If none selected, show nothing
-                    if (selected.length === 0) {
-                        map.setFilter('nira-roughness-layer', ['in', 'highway', '']); 
-                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
-                    } else {
-                        map.setFilter('nira-roughness-layer', ['in', ['get', 'highway'], ['literal', selected]]);
-                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
-                    }
-                }
-
-                // Attach change events to checkboxes
-                document.querySelectorAll('#road-type-controls input[type="checkbox"]').forEach(cb => {
-                    cb.addEventListener('change', updateRoadTypeFilter);
-                });
-
 
                 /////// Anomaly
                 d3.json('data/geojson/anomaly_filtered.geojson').then(function(geojson) {
@@ -232,7 +200,6 @@
                     map.addSource('anomaly', {
                         type: 'geojson',
                         data: geojson,
-                        type: "geojson",
                         cluster: true,      // enable clustering
                         clusterMaxZoom: 12, // max zoom to cluster points
                         clusterRadius: 50   // radius in pixels to group point
@@ -408,7 +375,53 @@
                         map.setFilter("anomaly-highlight", ["==", ["get", "id"], -1]); 
                         popup.remove();
                     });
+
+                    // Attach events to anomaly checkboxes
+                    document.querySelectorAll('#anomaly-legend input[value="POTHOLE"], #anomaly-legend input[value="BUMP"], #anomaly-legend input[value="OTHER"]').forEach(cb => {
+                        cb.addEventListener('change', updateAnomalyTypeFilter);
+                    });
+
+                    updateAnomalyTypeFilter();
                 });
+
+                /////// Filters
+                // Function to update road type filter
+                function updateRoadTypeFilter() {
+                    const checkboxes = document.querySelectorAll('#road-type-controls input[type="checkbox"]');
+                    const selected = Array.from(checkboxes)
+                                        .filter(cb => cb.checked)
+                                        .map(cb => cb.value);
+
+                    // If none selected, show nothing
+                    if (selected.length === 0) {
+                        map.setFilter('nira-roughness-layer', ['in', 'highway', '']); 
+                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
+                    } else {
+                        map.setFilter('nira-roughness-layer', ['in', ['get', 'highway'], ['literal', selected]]);
+                        map.setFilter('nira-roughness-highlight', ['==', ['get', 'id'], -1]);
+                    }
+                }
+
+                // Attach change events to checkboxes
+                document.querySelectorAll('#road-type-controls input[type="checkbox"]').forEach(cb => {
+                    cb.addEventListener('change', updateRoadTypeFilter);
+                });
+                
+                // Anomaly type filter
+                function updateAnomalyTypeFilter() {
+                    const checkboxes = document.querySelectorAll('#anomaly-legend input[value="POTHOLE"], #anomaly-legend input[value="BUMP"], #anomaly-legend input[value="OTHER"]');
+                    const selected = Array.from(checkboxes)
+                                        .filter(cb => cb.checked)
+                                        .map(cb => cb.value);
+
+                    if (selected.length === 0) {
+                        map.setFilter('anomaly-layer', ['in', ['get', 'type'], ['literal', []]]);
+                        map.setFilter('anomaly-highlight', ['==', ['get', 'id'], -1]);
+                    } else {
+                        map.setFilter('anomaly-layer', ['in', ['get', 'type'], ['literal', selected]]);
+                        map.setFilter('anomaly-highlight', ['==', ['get', 'id'], -1]);
+                    }
+                }
 
                 //////// County boundaries
                 d3.json('data/geojson/21_counties.geojson').then(function(geojsonData) {
@@ -428,6 +441,10 @@
                         }
                     });
                 });
+
+                // Initialize visibility filters based on checkbox states
+                updateRoadTypeFilter();
+                
             });
         }
 
