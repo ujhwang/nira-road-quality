@@ -23,6 +23,126 @@
             font-family: 'Roboto', sans-serif;
             font-size: 13px;
         }
+        .logo {
+            position: absolute;
+            top: 25px;
+            left: 25px;
+            width: 75px;  
+            height: 75px; 
+        }
+        .logo-link img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .logo-link img:hover {
+            transform: scale(1.2);
+            opacity: 0.9;
+        }
+
+        /* About button */
+        #about-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            z-index: 999;
+            padding: 10px 16px;
+            background-color: #626566; 
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: 'Roboto', sans-serif;
+            font-size: 20px;
+            font-weight: 600;
+            box-shadow: 0 0 12px rgba(0, 0, 0, 0.8);
+            transition: all 0.2s ease;
+        }
+
+        #about-btn:hover {
+            background: #d4d4d4;
+            transform: scale(1.1);
+        }
+
+        /* --- About modal styles --- */
+        #about-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        #about-content {
+            background: white;
+            max-width: 600px;
+            width: 90%;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+            max-height: 80%;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Close button */
+        #close-about {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            border: none;
+            background: none;
+            font-size: 22px;
+            cursor: pointer;
+        }
+
+        /* --- Responsive layout for mobile --- */
+        @media (max-width: 600px) {
+            #about-content {
+                width: 95%;
+                padding: 16px;
+                font-size: 14px;
+                border-radius: 6px;
+                max-height: 85%;
+            }
+
+            #about-content h2 {
+                font-size: 18px;
+                margin-bottom: 10px;
+            }
+
+            #about-content p {
+                font-size: 14px;
+                line-height: 1.5;
+            }
+
+            #about-content ul {
+                padding-left: 18px;
+                font-size: 13px;
+            }
+
+            #close-about {
+                font-size: 20px;
+            }
+        }
+
+        /* Optional: Responsive text */
+        @media (max-width: 600px) {
+            #about-btn {
+                font-size: 16px;
+                padding: 6px 10px;
+            }
+            #about-content {
+                padding: 15px;
+            }
+        }
 
         #legend-container {
             position: absolute;
@@ -51,39 +171,102 @@
             margin-right: 4px;
         }
 
+        /* Mobile adjustments */
+        @media (max-width: 600px) {
+            #legend-container {
+                bottom: 10px;
+                left: 10px;
+                gap: 6px;
+            }
 
+            #legend-container .legend {
+                padding: 6px 8px;
+                font-size: 12px;
+                line-height: 1.3;
+                max-height: 120px;
+                overflow-y: auto;
+            }
+
+            /* Make legend sections collapsible */
+            #legend-container .legend strong {
+                display: flex;
+                justify-content: space-between;
+                cursor: pointer;
+            }
+
+            #legend-container .legend-content {
+                display: block;
+            }
+
+            #legend-container .legend.collapsed .legend-content {
+                display: none;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="map"></div>
+    <div class="logo">
+        <a href="https://atlantaregional.org/what-we-do/transportation-planning/" target="_blank" class="logo-link">
+            <img src="style/arc-favicon-master.webp" alt="Logo with Text">
+        </a>
+    </div>
+
+    <button id="about-btn">About This Map</button>
+    <div id="about-modal">
+        <div id="about-content">
+            <button id="close-about">&times;</button>
+            <h2>Metro Atlanta Road Roughness & Anomaly Map</h2>
+            <p>This interactive web map displays road roughness and recorded road anomalies across 21 counties in the Metro Atlanta region.</p> 
+            <p><strong>Road roughness</strong> is measured using the International Roughness Index (IRI) in inches per mile. 
+                The displayed value represents an aggregated IRI over the past 60 days, 
+                with more recent measurements weighted more heavily.</p> 
+            <p><strong>Anomalies</strong> include potholes, bumps, and other surface issues. 
+                A higher <em>severity</em> indicates a more significant anomaly, 
+                while the <em>hit ratio</em> represents the proportion of passing vehicles that detected the anomaly.</p> 
+            <p>Click on road segments or anomaly points to view detailed information. Use the checkboxes to filter the data by road type or anomaly type.</p> 
+            <ul>
+                <li><strong>Last Updated</strong>: 2025-10-12</li>
+                <li><strong>Data Source</strong>: <a href="https://www.niradynamics.com/road-maintenance" target="_blank">NIRA Dynamics</a></li>
+                <li><strong>Questions? Contact</strong>: Uijeong "UJ" Hwang (uhwang@atlantaregional.org)</li>
+            </ul>
+        </div>
+    </div>
+
     <div id="legend-container">
         <div class="legend" id="roughness-legend">
-            <strong>Roughness (IRI in inch/mile)</strong><br>
-            <span class="legend-color" style="background:#2DC937;"></span> 0–95<br>
-            <span class="legend-color" style="background:#99C140;"></span> 95–130<br>
-            <span class="legend-color" style="background:#E7B416;"></span> 130–170<br>
-            <span class="legend-color" style="background:#DB7B2B;"></span> 170–220<br>
-            <span class="legend-color" style="background:#CC3232;"></span> 220+
+            <strong>Roughness (IRI in inch/mile)</strong>
+            <div class="legend-content">
+                <span class="legend-color" style="background:#2DC937;"></span> 0–95<br>
+                <span class="legend-color" style="background:#99C140;"></span> 95–130<br>
+                <span class="legend-color" style="background:#E7B416;"></span> 130–170<br>
+                <span class="legend-color" style="background:#DB7B2B;"></span> 170–220<br>
+                <span class="legend-color" style="background:#CC3232;"></span> 220+
+            </div>
         </div>
 
         <div class="legend" id="anomaly-legend">
-            <strong>Road Anomaly Types</strong><br>
-            <label><input type="checkbox" value="POTHOLE" checked> 
-                <span class="legend-color" style="background:#9442db;"></span> Pothole</label><br>
-            <label><input type="checkbox" value="BUMP" checked> 
-                <span class="legend-color" style="background:#17aceb;"></span> Bump</label><br>
-            <label><input type="checkbox" value="OTHER" checked> 
-                <span class="legend-color" style="background:#686869;"></span> Other</label>
+            <strong>Road Anomaly Types</strong>
+            <div class="legend-content">
+                <label><input type="checkbox" value="POTHOLE" checked> 
+                    <span class="legend-color" style="background:#9442db;"></span> Pothole</label><br>
+                <label><input type="checkbox" value="BUMP" checked> 
+                    <span class="legend-color" style="background:#17aceb;"></span> Bump</label><br>
+                <label><input type="checkbox" value="OTHER" checked> 
+                    <span class="legend-color" style="background:#686869;"></span> Other</label>
+            </div>
         </div>
 
         <div class="legend" id="road-type-controls">
-            <strong>Road Types (OSM)</strong><br>
-            <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
-            <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
-            <label><input type="checkbox" value="primary" checked> Primary</label><br>
-            <label><input type="checkbox" value="secondary" checked> Secondary</label><br>
-            <label><input type="checkbox" value="tertiary" checked> Tertiary</label><br>
-            <label><input type="checkbox" value="residential"> Residential</label>
+            <strong>Road Types (OSM)</strong>
+            <div class="legend-content">
+                <label><input type="checkbox" value="motorway" checked> Motorway</label><br>
+                <label><input type="checkbox" value="trunk" checked> Trunk</label><br>
+                <label><input type="checkbox" value="primary" checked> Primary</label><br>
+                <label><input type="checkbox" value="secondary" checked> Secondary</label><br>
+                <label><input type="checkbox" value="tertiary" checked> Tertiary</label><br>
+                <label><input type="checkbox" value="residential"> Residential</label>
+            </div>
         </div>
     </div>
 
@@ -93,6 +276,33 @@
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-geocoder/v5.1.0/mapbox-gl-geocoder.css" type="text/css">
 
     <script>
+
+        const aboutBtn = document.getElementById('about-btn');
+        const aboutModal = document.getElementById('about-modal');
+        const closeAbout = document.getElementById('close-about');
+
+        aboutBtn.addEventListener('click', () => {
+            aboutModal.style.display = 'flex';
+        });
+
+        closeAbout.addEventListener('click', () => {
+            aboutModal.style.display = 'none';
+        });
+
+        // Close modal if clicking outside content
+        aboutModal.addEventListener('click', (e) => {
+            if (e.target === aboutModal) {
+                aboutModal.style.display = 'none';
+            }
+        });
+
+        // Optional: close with Esc key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape") {
+                aboutModal.style.display = 'none';
+            }
+        });
+
         mapboxgl.accessToken = 'pk.eyJ1IjoidWpod2FuZyIsImEiOiJjbHl4N2h5cTQxeXU1MmpvaWZ5bXNjdHpjIn0.gcfpTq4jsVV2E9yULpcJWQ';
 
         var map = new mapboxgl.Map({
@@ -496,8 +706,14 @@
             collapsed: false // keep open by default
         });
 
-        // Add geocoder control to top-left corner
-        map.addControl(geocoder, "top-left");
+        // Add geocoder control to bottom-right corner
+        map.addControl(geocoder, "bottom-right");
+
+        document.querySelectorAll('#legend-container .legend strong').forEach(header => {
+            header.addEventListener('click', () => {
+                header.parentElement.classList.toggle('collapsed');
+            });
+        });
 
     </script>
 </body>
